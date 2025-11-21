@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Teams NEO Match Pro v0.9</title>
+    <style>
+        :root {
+            --main-green: #2c8a4b;
+            --court-blue: #4e8bc4;
+            --clay-orange: #e07030;
+            --bg-gray: #f4f6f8;
+            --error-red: #ff6b6b;
+        }
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-gray);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        header {
+            background-color: var(--main-green);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+            padding-bottom: 50px;
+        }
+
+        /* カード共通スタイル */
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+        .card-header {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #444;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 設定フォームスタイル */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .radio-group {
+            display: flex;
+            gap: 10px;
+        }
+        .radio-btn {
+            flex: 1;
+        }
+        .radio-btn input {
+            display: none;
+        }
+        .radio-btn label {
+            display: block;
+            text-align: center;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .radio-btn input:checked + label {
+            background: #e8f5e9;
+            border-color: var(--main-green);
+            color: var(--main-green);
+            font-weight: bold;
+        }
+
+        /* 数字を入力 */
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--main-green);
+        }
+
+        /* 選手名を入力 */
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        /* メインボタン */
+        .btn-generate {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--main-green);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1e5c32;
+            transition: active 0.1s;
+            margin-top: 10px;
+        }
+        .btn-generate:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* マッチカードスタイル */
+        .match-card {
+            border-left: 5px solid var(--court-blue);
+            position: relative;
+        }
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--court-blue);
+            font-weight: bold;
+        }
+        .match-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 5px;
+        }
+        .team-box {
+            flex: 1;
+            text-align: center;
+            background: #f8f9fa;
+            padding: 10px 5px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .score-input {
+            width: 40px;
+            text-align: center;
+            font-size: 18px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .btn-finish {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 待機 & エラー */
+        .waiting-card {
+            background: #fff9db;
+            border-left: 5px solid #fcc419;
+            color: #664d03;
+        }
+        .error-msg {
+            color: var(--error-red);
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* History */
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .winner { color: var(--main-green); font-weight: bold; }
+        .loser { color: #999; }
+        .score-badge { background: #333; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 5px; }
+
+        .btn-reset {
+            font-size: 12px;
+            color: #dc3545;
+            background: white;
+            border: 1px solid #dc3545;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>🎾 Teams NEO Match Pro v0.9</header>
+
+    <div class="container">
+        
+        <!-- 設定パネル -->
+        <div class="card">
+            <div class="card-header">⚙️ ゲーム設定</div>
+
+            <!-- 1. ゲームルール (シングルス/ダブルス) -->
+            <div class="form-group">
+                <span class="form-label">1. ゲーム方式</span>
+                <div class="radio-group">
+                    <div class="radio-btn">
+                        <input type="radio" name="gameMode" id="modeDouble" value="double" checked onchange="updateValidation()">
+                        <label for="modeDouble">ダブルス (2 vs 2)</label>
+                    </div>
+                    <div class="radio-btn">
+                        <input type="radio" name="gameMode" id="modeSingle" value="single" onchange="updateValidation()">
+                        <label for="modeSingle">シングルス (1 vs 1)</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 参加者数 -->
+            <div class="form-group">
+                <span class="form-label">2. 参加者数 (3 ~ 12人)</span>
+                <input type="number" id="playerCountInput" min="3" max="12" placeholder="数字を入力(例: 6)" oninput="updatePlayerPlaceholder()">
+                <div id="countError" class="error-msg">⚠️ 参加者数は3人から12人までです。</div>
+            </div>
+
+            <!-- 3. コート数 -->
+            <div class="form-group">
+                <span class="form-label">3. コート面数</span>
+                <div class="radio-group">
+                    <div class="radio-btn">
+                        <input type="radio" name="courtCount" id="court1" value="1" checked>
+                        <label for="court1">1面</label>
+                    </div>
+                    <div class="radio-btn">
+                        <input type="radio" name="courtCount" id="court2" value="2">
+                        <label for="court2">2面</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 名前を入力 (オプション) -->
+            <div class="form-group">
+                <span class="form-label">参加者の名前を入力</span>
+                <textarea id="playerNames" placeholder="名前の間にはコンマ(,)入力してください。"></textarea>
+                <div style="text-align:right; font-size:12px; color:#888; margin-top:4px;">
+                    現在の入力: <span id="currentNameCount">0</span>人 / 目標: <span id="targetNameCount">0</span>人
+                </div>
+                <div id="nameMismatchError" class="error-msg">⚠️ 設定した参加者数と入力した名前の数が一致しません。</div>
+            </div>
+
+            <button onclick="generateMatches()" class="btn-generate">🎲 対戦表を作成</button>
+        </div>
+
+        <!-- 進行中のマッチ -->
+        <div class="card-header" style="padding:0 10px; margin-bottom:10px; border:none;">🔥 進行中のマッチ</div>
+        <div id="active-matches">
+            <div style="text-align:center; color:#999; padding:20px; background:white; border-radius:12px;">
+                試合を始めてください。
+            </div>
+        </div>
+
+        <!-- 履歴 -->
+        <div class="card" style="margin-top:20px;">
+            <div class="card-header">
+                <span>📋 試合履歴 (最新の20試合)</span>
+                <button onclick="resetHistory()" class="btn-reset">リセット</button>
+            </div>
+            <div id="history-list" class="history-list">
+                <!-- 記録アイテム -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 전역 상태 변수
+        let currentMatches = [];
+        let matchHistory = [];
+
+        // 초기화 및 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            updatePlayerPlaceholder();
+            renderMatches();
+            renderHistory();
+
+            // 이름 입력 시 카운트 업데이트 리스너
+            document.getElementById('playerNames').addEventListener('input', () => {
+                updateNameCount();
+                saveData(); // 입력 중 자동 저장
+            });
+        });
+
+        // 2. 참가자 수 입력에 따른 UI 업데이트
+        function updatePlayerPlaceholder() {
+            const countInput = document.getElementById('playerCountInput');
+            let count = parseInt(countInput.value);
+            
+            // 에러 메시지 초기화
+            document.getElementById('countError').style.display = 'none';
+            
+            if (isNaN(count)) count = 0;
+            document.getElementById('targetNameCount').textContent = count;
+
+            // 이름 입력란에 예시 텍스트 업데이트 (UX)
+            updateNameCount();
+        }
+
+        // 이름 개수 실시간 체크
+        function updateNameCount() {
+            const text = document.getElementById('playerNames').value;
+            const names = text.split(/,|\n/).map(s => s.trim()).filter(s => s !== "");
+            document.getElementById('currentNameCount').textContent = names.length;
+            document.getElementById('nameMismatchError').style.display = 'none';
+        }
+
+        // 검증 로직 업데이트
+        function updateValidation() {
+            // 모드 변경 시 특이사항 있으면 처리 (현재는 없음)
+        }
+
+        // --- 핵심: 대진표 생성 로직 ---
+        function generateMatches() {
+            // 1. 설정 값 가져오기
+            const mode = document.querySelector('input[name="gameMode"]:checked').value;
+            const targetCount = parseInt(document.getElementById('playerCountInput').value);
+            const courtLimit = parseInt(document.querySelector('input[name="courtCount"]:checked').value);
+            const nameText = document.getElementById('playerNames').value;
+            let players = nameText.split(/,|\n/).map(s => s.trim()).filter(s => s !== "");
+
+            // 2. 검증 (Validation)
+            const countError = document.getElementById('countError');
+            const nameError = document.getElementById('nameMismatchError');
+            
+            countError.style.display = 'none';
+            nameError.style.display = 'none';
+
+            // 2-1. 숫자 범위 체크
+            if (isNaN(targetCount) || targetCount < 3 || targetCount > 12) {
+                countError.style.display = 'block';
+                alert("참가자 수는 3명 이상 12명 이하로 설정해 주세요.");
+                return;
+            }
+
+            // 2-2. 복식 최소 인원 체크
+            if (mode === 'double' && targetCount < 4) {
+                alert("복식 게임은 최소 4명이 필요합니다.");
+                return;
+            }
+
+            // 2-3. 입력된 이름 개수 체크
+            if (players.length !== targetCount) {
+                nameError.style.display = 'block';
+                alert(`設定した人数(${targetCount}人)と入力した名前の数(${players.length}人)が一致しません。`);
+                return;
+            }
+
+            // 3. 로직 실행
+            // 셔플
+            for (let i = players.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [players[i], players[j]] = [players[j], players[i]];
+            }
+
+            currentMatches = []; // 초기화
+            let playersCopy = [...players]; // 대기자 처리를 위해 복사본 사용
+
+            // 코트 배정
+            for (let c = 1; c <= courtLimit; c++) {
+                // 필요한 인원: 복식(4), 단식(2)
+                const needed = (mode === 'double') ? 4 : 2;
+
+                if (playersCopy.length >= needed) {
+                    const teamA = [];
+                    const teamB = [];
+                    
+                    if (mode === 'double') {
+                        teamA.push(playersCopy.shift(), playersCopy.shift());
+                        teamB.push(playersCopy.shift(), playersCopy.shift());
+                    } else {
+                        teamA.push(playersCopy.shift());
+                        teamB.push(playersCopy.shift());
+                    }
+
+                    currentMatches.push({
+                        id: Date.now() + Math.random(),
+                        court: c,
+                        mode: mode,
+                        teamA: teamA,
+                        teamB: teamB,
+                        scoreA: '',
+                        scoreB: ''
+                    });
+                } else {
+                    // 코트는 2개를 원했지만 인원이 부족한 경우 -> 루프 종료하거나 빈 코트 메시지 처리는 렌더링에서
+                }
+            }
+
+            // 남은 인원은 대기자
+            if (playersCopy.length > 0) {
+                currentMatches.push({
+                    isWaiting: true,
+                    players: playersCopy
+                });
+            }
+
+            saveData();
+            renderMatches();
+        }
+
+        // 렌더링: 진행 중인 매치
+        function renderMatches() {
+            const container = document.getElementById('active-matches');
+            container.innerHTML = "";
+
+            if (currentMatches.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#999; padding:20px; background:white; border-radius:12px;">設定の後、対戦表の生成ボタン押してください。</div>';
+                return;
+            }
+
+            currentMatches.forEach((match, index) => {
+                if (match.isWaiting) {
+                    container.innerHTML += `
+                        <div class="card waiting-card" style="padding:15px;">
+                            <div style="font-weight:bold; margin-bottom:5px;">☕ 待機 / 休み (${match.players.length}人)</div>
+                            <div>${match.players.join(', ')}</div>
+                        </div>
+                    `;
+                } else {
+                    // 단식/복식에 따라 표시 방식 조정
+                    const teamAText = match.teamA.join('<br>');
+                    const teamBText = match.teamB.join('<br>');
+                    const modeLabel = match.mode === 'double' ? 'ダブルス' : 'シングルス';
+
+                    container.innerHTML += `
+                        <div class="card match-card" style="padding:15px;">
+                            <div class="match-header">
+                                <span>コート ${match.court} (${modeLabel})</span>
+                                <span>進行中</span>
+                            </div>
+                            <div class="match-body">
+                                <div class="team-box">
+                                    ${teamAText}
+                                </div>
+                                <input type="tel" class="score-input" value="${match.scoreA}" placeholder="0" onchange="updateScore(${index}, 'A', this.value)">
+                                <span style="color:#999; font-weight:bold;">:</span>
+                                <input type="tel" class="score-input" value="${match.scoreB}" placeholder="0" onchange="updateScore(${index}, 'B', this.value)">
+                                <div class="team-box">
+                                    ${teamBText}
+                                </div>
+                            </div>
+                            <button class="btn-finish" onclick="finishMatch(${index})">試合終了と記録</button>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // 점수 저장
+        function updateScore(index, team, value) {
+            if (team === 'A') currentMatches[index].scoreA = value;
+            else currentMatches[index].scoreB = value;
+            saveData();
+        }
+
+        // 경기 종료
+        function finishMatch(index) {
+            const match = currentMatches[index];
+            if (!match.scoreA || !match.scoreB) {
+                if(!confirm("点数を記入せず終了しますか?")) return;
+            }
+
+            // 히스토리 추가 (최대 20개 유지)
+            const historyItem = {
+                time: new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}),
+                ...match
+            };
+            
+            matchHistory.unshift(historyItem);
+            if (matchHistory.length > 20) {
+                matchHistory = matchHistory.slice(0, 20); // 20개까지만 자르기
+            }
+
+            // 진행 중 목록에서 삭제
+            currentMatches.splice(index, 1);
+            
+            saveData();
+            renderMatches();
+            renderHistory();
+        }
+
+        // 렌더링: 히스토리
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = "";
+
+            if (matchHistory.length === 0) {
+                container.innerHTML = '<div style="padding:15px; text-align:center; color:#ccc;">試合履歴がありません。</div>';
+                return;
+            }
+
+            matchHistory.forEach(match => {
+                const sA = parseInt(match.scoreA) || 0;
+                const sB = parseInt(match.scoreB) || 0;
+                const teamAClass = sA > sB ? 'winner' : (sA < sB ? 'loser' : '');
+                const teamBClass = sB > sA ? 'winner' : (sB < sA ? 'loser' : '');
+                
+                const teamAStr = match.teamA.join(', ');
+                const teamBStr = match.teamB.join(', ');
+
+                container.innerHTML += `
+                    <div class="history-item">
+                        <div style="flex:1; text-align:right;" class="${teamAClass}">${teamAStr}</div>
+                        <span class="score-badge">${match.scoreA} : ${match.scoreB}</span>
+                        <div style="flex:1; text-align:left;" class="${teamBClass}">${teamBStr}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // 히스토리 리셋
+        function resetHistory() {
+            if(confirm("すべての履歴をリセットしますか?")) {
+                matchHistory = [];
+                saveData();
+                renderHistory();
+            }
+        }
+
+        // 데이터 저장
+        function saveData() {
+            localStorage.setItem('tp_mode', document.querySelector('input[name="gameMode"]:checked').value);
+            localStorage.setItem('tp_count', document.getElementById('playerCountInput').value);
+            localStorage.setItem('tp_court', document.querySelector('input[name="courtCount"]:checked').value);
+            localStorage.setItem('tp_names', document.getElementById('playerNames').value);
+            localStorage.setItem('tp_matches', JSON.stringify(currentMatches));
+            localStorage.setItem('tp_history', JSON.stringify(matchHistory));
+        }
+
+        // 데이터 로드
+        function loadData() {
+            const mode = localStorage.getItem('tp_mode');
+            if(mode) document.querySelector(`input[name="gameMode"][value="${mode}"]`).checked = true;
+
+            const count = localStorage.getItem('tp_count');
+            if(count) document.getElementById('playerCountInput').value = count;
+
+            const court = localStorage.getItem('tp_court');
+            if(court) document.querySelector(`input[name="courtCount"][value="${court}"]`).checked = true;
+
+            const names = localStorage.getItem('tp_names');
+            if(names) document.getElementById('playerNames').value = names;
+
+            const matches = localStorage.getItem('tp_matches');
+            if(matches) currentMatches = JSON.parse(matches);
+
+            const history = localStorage.getItem('tp_history');
+            if(history) matchHistory = JSON.parse(history);
+        }
+    </script>
+</body>
+</html>
