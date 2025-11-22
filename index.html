@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teams NEO Match Pro v0.9</title>
+    <title>テニスマッチ・プロ v3.0 (Fair)</title>
     <style>
         :root {
             --main-green: #2c8a4b;
@@ -13,7 +13,7 @@
             --error-red: #ff6b6b;
         }
         body {
-            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
             background-color: var(--bg-gray);
             margin: 0;
             padding: 0;
@@ -96,7 +96,7 @@
             font-weight: bold;
         }
 
-        /* 数字を入力 */
+        /* 数字入力 */
         input[type="number"] {
             width: 100%;
             padding: 12px;
@@ -110,7 +110,7 @@
             border-color: var(--main-green);
         }
 
-        /* 選手名を入力 */
+        /* 選手名入力 */
         textarea {
             width: 100%;
             height: 80px;
@@ -205,7 +205,7 @@
             display: none;
         }
 
-        /* History */
+        /* 履歴 */
         .history-list {
             max-height: 300px;
             overflow-y: auto;
@@ -232,11 +232,30 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
+        /* フッター注意事項 */
+        .footer-note {
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            margin-top: 30px;
+            line-height: 1.5;
+        }
+        
+        /* 統計情報 (デバッグ用だが便利なので表示) */
+        .stats-info {
+            font-size: 11px;
+            color: #666;
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
 
-    <header>🎾 Teams NEO Match Pro v0.9</header>
+    <header>🎾 テニスマッチ・プロ</header>
 
     <div class="container">
         
@@ -246,7 +265,7 @@
 
             <!-- 1. ゲームルール (シングルス/ダブルス) -->
             <div class="form-group">
-                <span class="form-label">1. ゲーム方式</span>
+                <span class="form-label">1. ゲーム形式</span>
                 <div class="radio-group">
                     <div class="radio-btn">
                         <input type="radio" name="gameMode" id="modeDouble" value="double" checked onchange="updateValidation()">
@@ -261,14 +280,14 @@
 
             <!-- 2. 参加者数 -->
             <div class="form-group">
-                <span class="form-label">2. 参加者数 (3 ~ 12人)</span>
-                <input type="number" id="playerCountInput" min="3" max="12" placeholder="数字を入力(例: 6)" oninput="updatePlayerPlaceholder()">
-                <div id="countError" class="error-msg">⚠️ 参加者数は3人から12人までです。</div>
+                <span class="form-label">2. 参加者数 (3〜12名)</span>
+                <input type="number" id="playerCountInput" min="3" max="12" placeholder="数字を入力 (例: 6)" oninput="updatePlayerPlaceholder()">
+                <div id="countError" class="error-msg">⚠️ 人数は3名から12名の間で設定してください。</div>
             </div>
 
             <!-- 3. コート数 -->
             <div class="form-group">
-                <span class="form-label">3. コート面数</span>
+                <span class="form-label">3. 使用コート数</span>
                 <div class="radio-group">
                     <div class="radio-btn">
                         <input type="radio" name="courtCount" id="court1" value="1" checked>
@@ -281,148 +300,206 @@
                 </div>
             </div>
 
-            <!-- 名前を入力 (オプション) -->
+            <!-- 名前入力 (オプションだが必須検証) -->
             <div class="form-group">
-                <span class="form-label">参加者の名前を入力</span>
-                <textarea id="playerNames" placeholder="名前の間にはコンマ(,)入力してください。"></textarea>
+                <span class="form-label">参加者名入力</span>
+                <textarea id="playerNames" placeholder="名前をカンマ(,)または読点(、)で区切ってください。"></textarea>
                 <div style="text-align:right; font-size:12px; color:#888; margin-top:4px;">
-                    現在の入力: <span id="currentNameCount">0</span>人 / 目標: <span id="targetNameCount">0</span>人
+                    入力済み: <span id="currentNameCount">0</span>名 / 目標: <span id="targetNameCount">0</span>名
                 </div>
-                <div id="nameMismatchError" class="error-msg">⚠️ 設定した参加者数と入力した名前の数が一致しません。</div>
+                <div id="nameMismatchError" class="error-msg">⚠️ 設定した人数と入力された名前の数が一致しません。</div>
             </div>
 
-            <button onclick="generateMatches()" class="btn-generate">🎲 対戦表を作成</button>
+            <button onclick="generateMatches()" class="btn-generate">🎲 対戦表を作成 (公平性重視)</button>
+            <div style="text-align:center; font-size:11px; color:#666; margin-top:5px;">
+                ※休憩した人は次回優先的に選ばれます。
+            </div>
         </div>
 
         <!-- 進行中のマッチ -->
-        <div class="card-header" style="padding:0 10px; margin-bottom:10px; border:none;">🔥 進行中のマッチ</div>
+        <div class="card-header" style="padding:0 10px; margin-bottom:10px; border:none;">🔥 進行中の試合</div>
         <div id="active-matches">
             <div style="text-align:center; color:#999; padding:20px; background:white; border-radius:12px;">
-                試合を始めてください。
+                ゲームを開始してください。
             </div>
         </div>
 
         <!-- 履歴 -->
         <div class="card" style="margin-top:20px;">
             <div class="card-header">
-                <span>📋 試合履歴 (最新の20試合)</span>
-                <button onclick="resetHistory()" class="btn-reset">リセット</button>
+                <span>📋 試合記録 (最新20件)</span>
+                <button onclick="resetHistory()" class="btn-reset">記録・統計リセット</button>
             </div>
             <div id="history-list" class="history-list">
                 <!-- 記録アイテム -->
             </div>
         </div>
 
+        <!-- 注意事項 (Footer) -->
+        <div class="footer-note">
+            当ページは予告なく修正される場合があります。<br>あらかじめご了承ください。
+        </div>
+
     </div>
 
     <script>
-        // 전역 상태 변수
+        // グローバル状態変数
         let currentMatches = [];
         let matchHistory = [];
+        // 公平性のための統計データ { "名前": { played: 0, lastWasRest: false } }
+        let playerStats = {}; 
 
-        // 초기화 및 로드
+        // 初期化およびロード
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             updatePlayerPlaceholder();
             renderMatches();
             renderHistory();
 
-            // 이름 입력 시 카운트 업데이트 리스너
             document.getElementById('playerNames').addEventListener('input', () => {
                 updateNameCount();
-                saveData(); // 입력 중 자동 저장
+                saveData(); 
             });
         });
 
-        // 2. 참가자 수 입력에 따른 UI 업데이트
+        // UI更新関数群
         function updatePlayerPlaceholder() {
             const countInput = document.getElementById('playerCountInput');
             let count = parseInt(countInput.value);
-            
-            // 에러 메시지 초기화
             document.getElementById('countError').style.display = 'none';
-            
             if (isNaN(count)) count = 0;
             document.getElementById('targetNameCount').textContent = count;
-
-            // 이름 입력란에 예시 텍스트 업데이트 (UX)
             updateNameCount();
         }
 
-        // 이름 개수 실시간 체크
         function updateNameCount() {
             const text = document.getElementById('playerNames').value;
-            const names = text.split(/,|\n/).map(s => s.trim()).filter(s => s !== "");
+            const names = text.split(/,|\n|、/).map(s => s.trim()).filter(s => s !== "");
             document.getElementById('currentNameCount').textContent = names.length;
             document.getElementById('nameMismatchError').style.display = 'none';
         }
 
-        // 검증 로직 업데이트
-        function updateValidation() {
-            // 모드 변경 시 특이사항 있으면 처리 (현재는 없음)
+        function updateValidation() { }
+
+        // ★ 公平な選抜ロジック (Weight-based Selection)
+        function getFairSelection(allNames, neededCount) {
+            // 1. 統計データがないプレイヤーを初期化
+            allNames.forEach(name => {
+                if (!playerStats[name]) {
+                    playerStats[name] = { played: 0, lastWasRest: false };
+                }
+            });
+
+            // 2. スコア計算
+            let candidates = allNames.map(name => {
+                let stat = playerStats[name];
+                let score = 0;
+
+                // ルールA: 前回休憩した人は超優先 (+1000点)
+                if (stat.lastWasRest) {
+                    score += 1000; 
+                }
+
+                // ルールB: 試合数が多いほど優先度を下げる (-50点/試合)
+                // これにより試合数が少ない人が自然と選ばれる
+                score -= (stat.played * 50);
+
+                // ルールC: ランダム要素 (0~10点)
+                // 試合数が同じ人同士の順位をランダムにする
+                score += Math.random() * 10;
+
+                return { name: name, score: score };
+            });
+
+            // 3. スコアが高い順にソート
+            candidates.sort((a, b) => b.score - a.score);
+
+            // 4. 選抜と待機に分ける
+            const selectedObj = candidates.slice(0, neededCount);
+            const waitingObj = candidates.slice(neededCount);
+            
+            const selectedNames = selectedObj.map(c => c.name);
+            const waitingNames = waitingObj.map(c => c.name);
+
+            return { selectedNames, waitingNames };
         }
 
-        // --- 핵심: 대진표 생성 로직 ---
+        // 選抜グループ内でのペア決めシャッフル
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- 核心: 対戦表作成ロジック ---
         function generateMatches() {
-            // 1. 설정 값 가져오기
+            // 設定取得
             const mode = document.querySelector('input[name="gameMode"]:checked').value;
             const targetCount = parseInt(document.getElementById('playerCountInput').value);
             const courtLimit = parseInt(document.querySelector('input[name="courtCount"]:checked').value);
             const nameText = document.getElementById('playerNames').value;
-            let players = nameText.split(/,|\n/).map(s => s.trim()).filter(s => s !== "");
+            
+            let allPlayers = nameText.split(/,|\n|、/).map(s => s.trim()).filter(s => s !== "");
 
-            // 2. 검증 (Validation)
+            // 検証
             const countError = document.getElementById('countError');
             const nameError = document.getElementById('nameMismatchError');
-            
             countError.style.display = 'none';
             nameError.style.display = 'none';
 
-            // 2-1. 숫자 범위 체크
             if (isNaN(targetCount) || targetCount < 3 || targetCount > 12) {
                 countError.style.display = 'block';
-                alert("참가자 수는 3명 이상 12명 이하로 설정해 주세요.");
+                alert("参加者数は3名以上12名以下で設定してください。");
                 return;
             }
-
-            // 2-2. 복식 최소 인원 체크
             if (mode === 'double' && targetCount < 4) {
-                alert("복식 게임은 최소 4명이 필요합니다.");
+                alert("ダブルスは最低4名が必要です。");
                 return;
             }
-
-            // 2-3. 입력된 이름 개수 체크
-            if (players.length !== targetCount) {
+            if (allPlayers.length !== targetCount) {
                 nameError.style.display = 'block';
-                alert(`設定した人数(${targetCount}人)と入力した名前の数(${players.length}人)が一致しません。`);
+                alert(`設定人数(${targetCount}名)と入力数(${allPlayers.length}名)が一致しません。`);
                 return;
             }
 
-            // 3. 로직 실행
-            // 셔플
-            for (let i = players.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [players[i], players[j]] = [players[j], players[i]];
+            // --- 公平選抜ロジック実行 ---
+            
+            // 必要な総人数を計算
+            let playersPerCourt = (mode === 'double') ? 4 : 2;
+            let totalNeeded = playersPerCourt * courtLimit;
+            
+            // もし参加者が足りない場合は、可能な限り埋める
+            if (totalNeeded > allPlayers.length) {
+                // コートを減らすなどの調整が必要だが、ここでは単に全員選ぶ
+                totalNeeded = allPlayers.length; 
+                // (モードによっては端数が出るが、後続処理でコートが作られなくなる)
             }
 
-            currentMatches = []; // 초기화
-            let playersCopy = [...players]; // 대기자 처리를 위해 복사본 사용
+            // 公平に選抜
+            const selection = getFairSelection(allPlayers, totalNeeded);
+            let selectedPool = selection.selectedNames;
+            let waitingPool = selection.waitingNames;
 
-            // 코트 배정
+            // 選ばれた人たちだけでシャッフル (パートナー決め)
+            selectedPool = shuffleArray(selectedPool);
+
+            currentMatches = []; 
+            let matchIndex = 0;
+
+            // コート割り当て
             for (let c = 1; c <= courtLimit; c++) {
-                // 필요한 인원: 복식(4), 단식(2)
-                const needed = (mode === 'double') ? 4 : 2;
-
-                if (playersCopy.length >= needed) {
+                if (selectedPool.length >= playersPerCourt) {
                     const teamA = [];
                     const teamB = [];
                     
                     if (mode === 'double') {
-                        teamA.push(playersCopy.shift(), playersCopy.shift());
-                        teamB.push(playersCopy.shift(), playersCopy.shift());
+                        teamA.push(selectedPool.shift(), selectedPool.shift());
+                        teamB.push(selectedPool.shift(), selectedPool.shift());
                     } else {
-                        teamA.push(playersCopy.shift());
-                        teamB.push(playersCopy.shift());
+                        teamA.push(selectedPool.shift());
+                        teamB.push(selectedPool.shift());
                     }
 
                     currentMatches.push({
@@ -434,30 +511,61 @@
                         scoreA: '',
                         scoreB: ''
                     });
-                } else {
-                    // 코트는 2개를 원했지만 인원이 부족한 경우 -> 루프 종료하거나 빈 코트 메시지 처리는 렌더링에서
+                    matchIndex++;
                 }
             }
 
-            // 남은 인원은 대기자
-            if (playersCopy.length > 0) {
+            // 待機者リスト作成
+            // 余った人(selectedPoolの残り)も待機に回す
+            waitingPool = waitingPool.concat(selectedPool);
+            
+            if (waitingPool.length > 0) {
                 currentMatches.push({
                     isWaiting: true,
-                    players: playersCopy
+                    players: waitingPool
                 });
             }
+
+            // ★ 統計データの更新 (選ばれた人はplayed+1, 休んだ人はlastWasRest=true)
+            updateStats(currentMatches, waitingPool);
 
             saveData();
             renderMatches();
         }
 
-        // 렌더링: 진행 중인 매치
+        // 統計データの更新
+        function updateStats(matches, waitingPool) {
+            // まず全員の lastWasRest を false にリセットしたいが、
+            // 今回休んだ人だけ true にする方が管理しやすい
+            
+            // 試合に出た人をカウントアップ
+            matches.forEach(m => {
+                if (!m.isWaiting) {
+                    const players = m.teamA.concat(m.teamB);
+                    players.forEach(name => {
+                        if (playerStats[name]) {
+                            playerStats[name].played += 1;
+                            playerStats[name].lastWasRest = false; // 試合したので休憩フラグ解除
+                        }
+                    });
+                }
+            });
+
+            // 休憩した人のフラグを立てる
+            waitingPool.forEach(name => {
+                if (playerStats[name]) {
+                    playerStats[name].lastWasRest = true; // 次回優先フラグ
+                }
+            });
+        }
+
+        // レンダリング: 進行中のマッチ
         function renderMatches() {
             const container = document.getElementById('active-matches');
             container.innerHTML = "";
 
             if (currentMatches.length === 0) {
-                container.innerHTML = '<div style="text-align:center; color:#999; padding:20px; background:white; border-radius:12px;">設定の後、対戦表の生成ボタン押してください。</div>';
+                container.innerHTML = '<div style="text-align:center; color:#999; padding:20px; background:white; border-radius:12px;">設定後、対戦表作成ボタンを押してください。</div>';
                 return;
             }
 
@@ -465,12 +573,11 @@
                 if (match.isWaiting) {
                     container.innerHTML += `
                         <div class="card waiting-card" style="padding:15px;">
-                            <div style="font-weight:bold; margin-bottom:5px;">☕ 待機 / 休み (${match.players.length}人)</div>
+                            <div style="font-weight:bold; margin-bottom:5px;">☕ 待機 / 休憩 (${match.players.length}名)</div>
                             <div>${match.players.join(', ')}</div>
                         </div>
                     `;
                 } else {
-                    // 단식/복식에 따라 표시 방식 조정
                     const teamAText = match.teamA.join('<br>');
                     const teamBText = match.teamB.join('<br>');
                     const modeLabel = match.mode === 'double' ? 'ダブルス' : 'シングルス';
@@ -492,39 +599,35 @@
                                     ${teamBText}
                                 </div>
                             </div>
-                            <button class="btn-finish" onclick="finishMatch(${index})">試合終了と記録</button>
+                            <button class="btn-finish" onclick="finishMatch(${index})">試合終了・記録保存</button>
                         </div>
                     `;
                 }
             });
         }
 
-        // 점수 저장
         function updateScore(index, team, value) {
             if (team === 'A') currentMatches[index].scoreA = value;
             else currentMatches[index].scoreB = value;
             saveData();
         }
 
-        // 경기 종료
         function finishMatch(index) {
             const match = currentMatches[index];
             if (!match.scoreA || !match.scoreB) {
-                if(!confirm("点数を記入せず終了しますか?")) return;
+                if(!confirm("スコア入力なしで終了しますか？")) return;
             }
 
-            // 히스토리 추가 (최대 20개 유지)
             const historyItem = {
-                time: new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}),
+                time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}),
                 ...match
             };
             
             matchHistory.unshift(historyItem);
             if (matchHistory.length > 20) {
-                matchHistory = matchHistory.slice(0, 20); // 20개까지만 자르기
+                matchHistory = matchHistory.slice(0, 20); 
             }
 
-            // 진행 중 목록에서 삭제
             currentMatches.splice(index, 1);
             
             saveData();
@@ -532,13 +635,12 @@
             renderHistory();
         }
 
-        // 렌더링: 히스토리
         function renderHistory() {
             const container = document.getElementById('history-list');
             container.innerHTML = "";
 
             if (matchHistory.length === 0) {
-                container.innerHTML = '<div style="padding:15px; text-align:center; color:#ccc;">試合履歴がありません。</div>';
+                container.innerHTML = '<div style="padding:15px; text-align:center; color:#ccc;">記録された試合はありません。</div>';
                 return;
             }
 
@@ -561,44 +663,48 @@
             });
         }
 
-        // 히스토리 리셋
         function resetHistory() {
-            if(confirm("すべての履歴をリセットしますか?")) {
+            if(confirm("すべての試合記録と公平性データをリセットしますか？\n(新しいセッションを開始します)")) {
                 matchHistory = [];
+                playerStats = {}; // 統計もリセット
                 saveData();
                 renderHistory();
             }
         }
 
-        // 데이터 저장
         function saveData() {
-            localStorage.setItem('tp_mode', document.querySelector('input[name="gameMode"]:checked').value);
-            localStorage.setItem('tp_count', document.getElementById('playerCountInput').value);
-            localStorage.setItem('tp_court', document.querySelector('input[name="courtCount"]:checked').value);
-            localStorage.setItem('tp_names', document.getElementById('playerNames').value);
-            localStorage.setItem('tp_matches', JSON.stringify(currentMatches));
-            localStorage.setItem('tp_history', JSON.stringify(matchHistory));
+            localStorage.setItem('tp_jp_mode', document.querySelector('input[name="gameMode"]:checked').value);
+            localStorage.setItem('tp_jp_count', document.getElementById('playerCountInput').value);
+            localStorage.setItem('tp_jp_court', document.querySelector('input[name="courtCount"]:checked').value);
+            localStorage.setItem('tp_jp_names', document.getElementById('playerNames').value);
+            localStorage.setItem('tp_jp_matches', JSON.stringify(currentMatches));
+            localStorage.setItem('tp_jp_history', JSON.stringify(matchHistory));
+            // 統計データも保存
+            localStorage.setItem('tp_jp_stats', JSON.stringify(playerStats));
         }
 
-        // 데이터 로드
         function loadData() {
-            const mode = localStorage.getItem('tp_mode');
+            const mode = localStorage.getItem('tp_jp_mode');
             if(mode) document.querySelector(`input[name="gameMode"][value="${mode}"]`).checked = true;
 
-            const count = localStorage.getItem('tp_count');
+            const count = localStorage.getItem('tp_jp_count');
             if(count) document.getElementById('playerCountInput').value = count;
 
-            const court = localStorage.getItem('tp_court');
+            const court = localStorage.getItem('tp_jp_court');
             if(court) document.querySelector(`input[name="courtCount"][value="${court}"]`).checked = true;
 
-            const names = localStorage.getItem('tp_names');
+            const names = localStorage.getItem('tp_jp_names');
             if(names) document.getElementById('playerNames').value = names;
 
-            const matches = localStorage.getItem('tp_matches');
+            const matches = localStorage.getItem('tp_jp_matches');
             if(matches) currentMatches = JSON.parse(matches);
 
-            const history = localStorage.getItem('tp_history');
+            const history = localStorage.getItem('tp_jp_history');
             if(history) matchHistory = JSON.parse(history);
+
+            // 統計ロード
+            const stats = localStorage.getItem('tp_jp_stats');
+            if(stats) playerStats = JSON.parse(stats);
         }
     </script>
 </body>
